@@ -4,11 +4,12 @@
 > - Deploy a Pod named `web-pod` using a custom ServiceAccount
 > - Grant the Pod permission to read the Secret using Role and RoleBinding
 ---
+```yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: dev
-
+---
 
 apiVersion: v1
 kind: Secret
@@ -18,14 +19,14 @@ metadata:
 type: Opaque
 stringData:
   password: s3cr3t
-
+---
 
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: web-sa
   namespace: dev
-
+---
 
 apiVersion: v1
 kind: Pod
@@ -38,7 +39,7 @@ spec:
   - name: nginx
     image: nginx
     command: ["sleep", "3600"]
-
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -48,7 +49,7 @@ rules:
 - apiGroups: [""]
   resources: ["secrets"]
   verbs: ["get"]
-
+---
 
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -63,9 +64,11 @@ roleRef:
   kind: Role
   name: secret-reader
   apiGroup: rbac.authorization.k8s.io
+---
 
 kubectl -n dev exec -it web-pod -- sh
+
 TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
 curl -sSk -H "Authorization: Bearer $TOKEN" \
   https://kubernetes.default.svc/api/v1/namespaces/dev/secrets/db-secret | jq
-
+```
