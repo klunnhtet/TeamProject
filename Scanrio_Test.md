@@ -65,9 +65,12 @@ roleRef:
   name: secret-reader
   apiGroup: rbac.authorization.k8s.io
 ---
+```
 
+```bash
 kubectl -n dev exec -it web-pod -- sh
-
+```
+```bash
 TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
 curl -sSk -H "Authorization: Bearer $TOKEN" \
   https://kubernetes.default.svc/api/v1/namespaces/dev/secrets/db-secret | jq
