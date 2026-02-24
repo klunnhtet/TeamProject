@@ -66,6 +66,8 @@ config file with dir
 kubectl config --kubeconfig=/root/my-kube-config use-context research
 
 **multi rule in role**
+
+```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -96,3 +98,89 @@ rules:
   - watch
   - create
   - delete~
+```
+
+Security context in pod
+
+```yaml
+--eg1
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-pod
+spec:
+  securityContext:
+    runAsUser: 1001
+  containers:
+  -  image: ubuntu
+     name: web
+     command: ["sleep", "5000"]
+     securityContext: --container level is more pioritized
+      runAsUser: 1002
+
+  -  image: ubuntu
+     name: sidecar
+     command: ["sleep", "5000"]
+--eg2
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cap-test
+spec:
+  containers:
+    - name: tester
+      image: ubuntu
+      command: ["sh", "-c", "sleep infinity"]
+      securityContext:
+        capabilities:
+          add:
+            - NET_ADMIN
+            - SYS_TIME
+        privileged: false
+```
+
+network policy
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internal-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      name: internal
+  policyTypes:
+    - Egress
+      #ingress:
+      #- from:
+      #- ipBlock:
+      #   cidr: 172.17.0.0/16
+      #    except:
+      #    - 172.17.1.0/24
+      # - namespaceSelector:
+      #    matchLabels:
+      #      project: myproject
+      #- podSelector:
+      #    matchLabels:
+      #      role: frontend
+      #ports:
+      #- protocol: TCP
+      #  port: 6379
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              name: payroll
+      ports:
+        - protocol: TCP
+          port: 8080
+    - to:
+        - podSelector:
+            matchLabels:
+              name: mysql
+      ports:
+        - protocol: TCP
+          port: 3306
+```
