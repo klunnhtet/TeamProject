@@ -184,3 +184,102 @@ spec:
         - protocol: TCP
           port: 3306
 ```
+
+---
+
+Installing k8s using kubeadm
+
+run on controlplane and node01
+
+```yaml
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.ipv4.ip_forward=1
+EOF
+
+#Apply sysctl params without reboot
+
+sudo sysctl --system
+
+#verify that net.ipv4.ip_forward is set to 1 with:
+sysctl net.ipv4.ip_forward
+
+sudo apt-get update
+
+sudo apt-get install -y apt-transport-https ca-certificates curl
+
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.34/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.34/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt-get update
+
+# To see the new version labels
+sudo apt-cache madison kubeadm
+
+sudo apt-get install -y kubelet=1.34.0-1.1 kubeadm=1.34.0-1.1 kubectl=1.34.0-1.1
+
+sudo apt-mark hold kubelet kubeadm kubectl
+```
+
+```bash
+IP_ADDR=$(ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+kubeadm init --apiserver-cert-extra-sans=controlplane --apiserver-advertise-address $IP_ADDR --pod-network-cidr=172.17.0.0/16 --service-cidr=172.20.0.0/16
+
+mkdir -p $HOME/.kube
+
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+create token to join node01
+kubeadm token create --print-join-command
+
+this command will be appeared and then copy and paste in node01
+kubeadm join 10.244.220.196:6443 --token eg7d2x.sfh7zsb77an7mgaa --discovery-token-ca-cert-hash sha256:25af9cafddc4b97c8d29ec5669957e4e65b10bc91eff63b327d2a83e089d64d5
+
+
+in controlplane download flannel
+curl -LO https://raw.githubusercontent.com/flannel-io/flannel/v0.20.2/Documentation/kube-flannel.yml
+
+add this in downloaded yaml
+net-conf.json: |
+    {
+      "Network": "172.17.0.0/16", # Update this to match the custom PodCIDR
+      "Backend": {
+        "Type": "vxlan"
+      }
+
+also add this in yaml
+  args:
+  - --ip-masq
+  - --kube-subnet-mgr
+  - --iface=eth0 #<= add this line
+```
+
+Installing HELM
+
+```bash
+$ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+$ chmod 700 get_helm.sh
+$ ./get_helm.sh
+```
+
+adding bitnami repo to controlplane
+
+```bash
+helm repo add bitnami https://charts.bitnami.com/bitnami
+
+    list repo
+    helm repo list
+    helm install amaze-surf bitnami/apache
+    helm list
+ helm uninstall happy-browse
+ helm repo list
+ helm repo remove hashicorp
+
+ chek history
+ helm history dazzling-web
+
+ upgrade nignx
+ helm upgrade dazzling-web bitnami/nginx --version 18.3.6
+```
