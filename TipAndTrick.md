@@ -283,3 +283,102 @@ helm repo add bitnami https://charts.bitnami.com/bitnami
  upgrade nignx
  helm upgrade dazzling-web bitnami/nginx --version 18.3.6
 ```
+
+###Kustomization
+
+<details>
+<summary>Kustomization</summary>
+
+```bash
+controlplane ~/code/k8s ➜  ls
+db  kustomization.yaml  message-broker  nginx
+```
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - db/db-config.yaml
+  - db/db-depl.yaml
+  - db/db-service.yaml
+  - message-broker/rabbitmq-config.yaml
+  - message-broker/rabbitmq-depl.yaml
+  - message-broker/rabbitmq-service.yaml
+  - nginx/nginx-depl.yaml
+  - nginx/nginx-service.yaml
+```
+
+```bash
+controlplane ~/code/k8s ➜  kubectl apply -k .
+```
+
+You can divide like this
+└── k8s
+├── db
+│ └── kustomization.yaml
+├── kustomization.yaml
+├── message-broker
+│ └── kustomization.yaml
+└── nginx
+└── kustomization.yaml
+In /k8s/kustomization.yaml
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - db/
+  - message-broker/
+  - nginx/
+```
+
+In /k8s/db/kustomization.yaml
+
+```yaml
+resources:
+  - db-config.yaml
+  - db-depl.yaml
+  - db-service.yaml
+```
+
+In /k8s/message-broker/kustomization.yaml
+
+```yaml
+resources:
+  - rabbitmq-config.yaml
+  - rabbitmq-depl.yaml
+  - rabbitmq-service.yaml
+```
+
+In /k8s/nginx/kustomization.yaml
+
+```yaml
+resources:
+  - nginx-depl.yaml
+  - nginx-service.yaml
+```
+
+use this to create kustomization.yaml
+
+```bash
+controlplane code/k8s/message-broker ➜  kustomize create
+```
+
+</details>
+
+> [!NOTE]
+> This is a note callout.
+
+> [!TIP]
+> This is a tip callout.
+
+> [!WARNING]
+> This is a warning callout.
+
+> [!IMPORTANT]
+> This is an important callout.
+
+> [!CAUTION]
+> This is a caution callout.
